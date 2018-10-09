@@ -1,0 +1,17 @@
+driver = com.mysql.jdbc.Driver
+url = jdbc:mysql://${APP_SERVER_DATABASE_IP}:${APP_SERVER_DATABASE_PORT}/${APP_SERVER_DATABASE_NAME}?autoReconnect=true
+username = ${APP_SERVER_DATABASE_USER}
+password = ${APP_SERVER_DATABASE_PASSWORD}
+
+<!-- RabbitMq config params -->
+uname = ${APP_RABBITMQ_USERNAME}
+pwd = ${APP_RABBITMQ_PASSWORD}
+hostIp = ${APP_RABBITMQ_HOSTNAME}
+exangeName = ${APP_RABBITMQ_EXCHANGE}
+routingKey = ${APP_RABBITMQ_BINDING_KEY}
+
+<!-- MongoDb config params -->
+unamemd = 
+pwdmd = 
+hostIpmd = localhost
+dbname = comcast_production

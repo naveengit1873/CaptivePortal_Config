@@ -1,0 +1,15 @@
+/var/log/captiveportal/web/splashserver.log {
+       su root
+       daily
+       rotate 30
+       copytruncate
+       create 640 syslog adm
+       delaycompress
+       compress
+       notifempty
+       missingok
+       postrotate
+                invoke-rc.d rsyslog rotate > /dev/null
+       endscript
+}
+

@@ -1,0 +1,25 @@
+#################################
+### DNS Manager configuration ###
+#################################
+
+### DNS Forwarders
+DNS1=8.8.8.8
+DNS2=8.8.4.4
+
+### IP address for all blocked sites
+REDIRECT_IP=127.0.0.1
+
+### App server URL
+APP_URL=http://127.0.0.1:80
+
+### Zone files store path
+ZONE_FILE_STORE_PATH=/etc/bind/zone_files/
+
+### RabbitMQ details
+RABBITMQ_HOSTNAME=127.0.0.1
+RABBITMQ_PORT=5672
+RABBITMQ_USERNAME=guest
+RABBITMQ_PASSWORD=guest
+RABBITMQ_EXCHANGE=amq.direct
+RABBITMQ_BINDING_KEY=sr_msg
+RABBITMQ_VHOST=/

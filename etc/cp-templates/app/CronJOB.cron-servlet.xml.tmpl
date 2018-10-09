@@ -1,0 +1,52 @@
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<beans xmlns=\"http://www.springframework.org/schema/beans\"
+	xmlns:context=\"http://www.springframework.org/schema/context\"
+	xmlns:task=\"http://www.springframework.org/schema/task\" xmlns:tx=\"http://www.springframework.org/schema/tx\"
+	xmlns:mvc=\"http://www.springframework.org/schema/mvc\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+	xsi:schemaLocation=\"
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+        http://www.springframework.org/schema/tx  
+        http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+        http://www.springframework.org/schema/task
+        http://www.springframework.org/schema/task/spring-task-4.2.xsd\">
+
+
+	<context:annotation-config />
+
+	<context:component-scan base-package=\"com.pronto\" />
+
+	<task:annotation-driven />
+	<mvc:annotation-driven />
+	<bean id=\"jspViewResolver\"
+		class=\"org.springframework.web.servlet.view.InternalResourceViewResolver\">
+		<property name=\"viewClass\"
+			value=\"org.springframework.web.servlet.view.JstlView\" />
+		<property name=\"prefix\" value=\"/WEB-INF/jsp/\" />
+		<property name=\"suffix\" value=\".jsp\" />
+	</bean>
+
+	<!-- Factory bean that creates the MongoDB instance -->
+	<bean id=\"mongo\" class=\"org.springframework.data.mongodb.core.MongoFactoryBean\">
+		<property name=\"host\" value=\"${MONGO_BIND_IP}:27017\"></property>
+	</bean>
+	<!-- Define the MongoTemplate which handles connectivity with MongoDB -->
+	<bean id=\"mongoTemplate\" class=\"org.springframework.data.mongodb.core.MongoTemplate\">
+		<constructor-arg name=\"mongo\" ref=\"mongo\" />
+		<constructor-arg name=\"databaseName\" value=\"comcast_production\" />
+	</bean>
+	
+	<bean id=\"multipartResolver\"
+		class=\"org.springframework.web.multipart.commons.CommonsMultipartResolver\">
+
+		 <!-- setting maximum upload size -->
+		<property name=\"maxUploadSize\" value=\"100000\" />
+
+	</bean>
+
+
+</beans>	

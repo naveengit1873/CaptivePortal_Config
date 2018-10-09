@@ -1,0 +1,8 @@
+check process DNS-Server with pidfile /var/run/named/named.pid
+   start program = "/etc/init.d/bind9 start" as uid "root" and gid "root"
+   stop program = "/etc/init.d/bind9 stop" as uid "root" and gid "root"
+   depend DNS-Manager
+
+check process DNS-Manager with path /var/run/dns_manager.pid
+   start program = "/root/scripts/dnsmanagerd start" as uid "root" and gid "root"
+   stop program = "/root/scripts/dnsmanagerd stop" as uid "root" and gid "root"

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PID_FILE=/var/run/dns_manager.pid
+
+function start_app {
+#rm -rf $PID_FILE
+/bin/dns_manager &
+}
+
+function stop_app {
+PID=`cat $PID_FILE`
+kill $PID
+sleep
+rm -rf $PID_FILE
+}
+
+function status_app {
+if [ -f $PID_FILE ]; then
+     PID=`cat $PID_FILE`
+     if ps --pid $PID 2>&1 1>/dev/null; then
+       echo "DNS Manager is running at ${PID}"
+     else
+       echo "$PID_FILE found, but $PID is not running"
+     fi
+     unset PID
+   else
+     echo "DNS Manager is stopped"
+fi
+}
+
+case $1 in
+start)
+start_app ;;
+stop)
+stop_app ;;
+restart)
+stop_app
+start_app ;;
+status)
+status_app
+;;
+*)
+
+echo "usage: dnsmanagerd {start|stop|restart|status}" ;;
+esac
+exit 0

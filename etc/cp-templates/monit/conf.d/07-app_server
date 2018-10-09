@@ -1,0 +1,3 @@
+check process App-Server with pidfile /u04/jboss/bin/jboss.pid
+   start program = "/u04/jboss/bin/manageJBoss.sh start" as uid "jboss" and gid "jboss" with timeout 90 seconds
+   stop program = "/u04/jboss/bin/manageJBoss.sh stop" as uid "jboss" and gid "jboss"

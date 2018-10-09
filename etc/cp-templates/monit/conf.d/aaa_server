@@ -1,0 +1,10 @@
+check process AAA-Server with pidfile /usr/local/var/run/radiusd/radiusd.pid
+   start program = "/root/scripts/radiusd start" as uid "root" and gid "root" with timeout 60 seconds
+   stop program = "/root/scripts/radiusd stop" as uid "root" and gid "root"
+   #if failed host 127.0.0.1 port 18120 type udp protocol radius secret testing123 then restart
+   if 5 restarts within 5 cycles then alert
+   depend Soapradius
+
+check process Soapradius with path /var/run/soap_radius.pid
+   start program = "/root/scripts/soapradiusd start" as uid "root" and gid "root" with timeout 60 seconds
+   stop program = "/root/scripts/soapradiusd stop" as uid "root" and gid "root"

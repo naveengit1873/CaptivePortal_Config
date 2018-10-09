@@ -1,0 +1,7 @@
+ check process Web-Server with pidfile /var/run/apache2/apache2.pid
+   group www
+   group apache
+   start program = "/etc/init.d/apache2 start"
+   stop program  = "/etc/init.d/apache2 stop"
+   if 4 restarts within 20 cycles then timeout
+   if failed host localhost port 80 with protocol http and request "/server-status" with timeout 25 seconds for 4 times within 5 cycles then restart

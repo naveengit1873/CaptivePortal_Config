@@ -1,0 +1,385 @@
+#!/bin/bash
+
+export _POSIX2_VERSION=199209
+
+source ~/.bash_profile
+
+wdir=`dirname $0`
+pushd "$wdir" >> /dev/null 2>&1
+
+function f_defVariables(){
+    jbossInstalledPropFile="/etc/jboss_installed.properties"
+
+    # User Input Parameters
+    jbossHome="/u04/jboss"
+    jbossUser="jboss"
+    jbossHttpPort="8080"
+    jbossHttpsPort="8443"
+
+    LOG_FILE=`readlink -f "jboss_manager.log"`
+    LOG_LEVEL=DEBUG
+    
+    # Important
+    HNS_LOG_LEVEL="DEBUG"
+}
+
+function f_initVariables(){  
+    jbossScript=""
+    jbossProcessInfo=""
+    jbossPID=""
+    hnsAppName="hns-app.ear"
+    jbossCli="bin/jboss-cli.sh"
+}
+
+function f_updateVariables(){
+    jbossScript="$jbossHome/bin/standalone.sh"
+    jbossDeploymentsDir="$jbossHome/standalone/deployments"
+    
+    jbossPidFile="$jbossHome/bin/jboss.pid"
+}
+
+
+function f_getProcessInfo(){
+    jbossProcessInfo=`ps -ef | $c_grep jboss | $c_grep standalone.xml | $c_grep java | $c_grep server | $c_grep -vi grep`
+}
+
+function f_getJBossPID(){
+    jbossPID=`$c_echo "$jbossProcessInfo" | $c_tr -s ' ' | $c_cut -d ' ' -f 2 `
+}
+
+function f_JBossStartCheck(){
+    local pidFlag_l=0
+    
+    while [ "$pidFlag_l" -ne 1  ]
+    do
+        f_getProcessInfo
+        if [ "$jbossProcessInfo" != "" ]; then
+            f_getJBossPID
+            pidFlag_l=1
+        else
+            $c_echo -n "."
+            sleep 1
+        fi
+    done
+    
+    $c_echo ""
+}
+
+function f_JBossStopCheck(){
+    local pidFlag_l=0
+    while [ "$pidFlag_l" -ne 1  ]
+    do
+    	f_getProcessInfo
+        if [ "$jbossProcessInfo_l" != "" ]; then
+            echo -n "."
+            sleep 1
+        else
+            echo "" > $jbossPidFile
+            pidFlag_l=1
+        fi
+    done
+    echo ""
+}
+
+function f_portBindingCheck(){
+    local httpBindFlag_l=0
+    local httpsBindFlag_l=0
+    log_debug "Waiting until jboss bind http and https ports"
+    while [ "$httpBindFlag_l" -ne 1 ] || [ "$httpsBindFlag_l" -ne 1 ]
+    do
+        if [ "$httpBindFlag_l" -eq 0 ]; then
+            httpBind=`netstat -unta | $c_tr -s ' ' | $c_grep ":$jbossHttpPort " | $c_grep LISTEN | $c_grep -vi grep | $c_wc -l`
+            if [ "$httpBind" -ne 0 ] ; then 
+            	httpBindFlag_l=1
+            fi
+        fi
+        
+        if [ "$httpsBindFlag_l" -eq 0 ]; then
+            httpsBind=`netstat -unta | $c_tr -s ' ' | $c_grep ":$jbossHttpsPort " | $c_grep LISTEN | $c_grep -vi grep | $c_wc -l`
+            if [ "$httpsBind" -ne 0 ] ; then 
+           	httpsBindFlag_l=1
+            fi
+        fi
+        
+        #httpsBindFlag_l=1
+        
+        $c_echo -n "."
+        sleep 1
+    done 
+    
+    echo "" 
+}
+
+function f_managementPortBindingCheck(){
+    local managementBindFlag_l=0
+    jbossManagementPort=9990
+    
+    log_debug "Waiting until jboss bind management port"
+    while [ "$managementBindFlag_l" -ne 1 ]
+    do
+        managementBind=`netstat -unta | $c_tr -s ' ' | $c_grep ":$jbossManagementPort " | $c_grep LISTEN | $c_grep -vi grep | $c_wc -l`
+        if [ "$managementBind" -ne 0 ] ; then 
+            managementBindFlag_l=1
+        fi
+        
+        $c_echo -n "."
+        sleep 1
+    done 
+    
+    echo ""
+}
+
+function f_hnsAppCheck(){
+    if [ -d "${jbossDeploymentsDir}/${hnsAppName}" ] && [ -f "${jbossDeploymentsDir}/${hnsAppName}.dodeploy" ]; then
+    	log_info "Deploying HNS App"
+	f_appDeployedCheck "${hnsAppName}"
+	
+	f_setHNSLogLevel "oss_cs_ws" ${HNS_LOG_LEVEL}
+        f_enableHNSScheduler "oss_cs_ws"
+        f_enableAppCache "oss_cs_ws"
+        f_enableConnectionWrapper "oss_cs_ws"
+        
+	f_deployWS
+	
+    fi
+}
+
+
+function f_start(){
+    f_jbossUserCheck
+    #f_validate
+    
+    local startTimeStart_l=`date +%s`
+    
+    ##  f_statusCheck before starting
+    f_getProcessInfo
+    if [ "$jbossProcessInfo" != "" ]; then
+        f_getJBossPID
+        $c_echo "Wildfly 10 is already running (PID: $jbossPID)"
+        exit 0
+    fi
+    
+    log_debug "Starting Wildfly 10 Application Server"
+    pushd "$jbossHome/bin" >> /dev/null 2>&1
+    { sh $jbossScript >/dev/null 2>&1 </dev/null & } &
+    popd >> /dev/null 2>&1
+    
+    sleep 5
+    f_JBossStartCheck
+    $c_echo "$jbossPID" > $jbossPidFile
+    
+    f_portBindingCheck
+    f_managementPortBindingCheck
+    
+    f_hnsAppCheck
+    
+    local endTimeStart_l=`date +%s`
+    local totalTimeStart_l=` $c_echo "scale=3; ($endTimeStart_l - $startTimeStart_l)" | bc `
+    log_debug OK "Wildfly 10 Started. (Total Time Taken to start the server is $totalTimeStart_l seconds )"
+    sudo -H -u jboss bash -c "/u04/jboss/HNSDataProcessing/bin/CustomerBillsSentinel.sh start"
+}
+
+
+function f_stop(){
+    f_jbossUserCheck
+    #f_validate
+    
+    f_getProcessInfo
+    if [ "$jbossProcessInfo" = "" ]; then
+        $c_echo "JBoss is not running"
+    else
+    	local startTimeStop_l=`date +%s`
+    	log_debug "Stopping Wildfly 10 Application Server"
+    	
+    	f_getJBossPID
+    	
+    	f_cli_shutdown
+   	sleep 5
+    	f_JBossStopCheck
+    	
+    	
+    	kill -0 $jbossPID >> /dev/null 2>&1
+    	if [ "$?" -eq 0 ]; then
+    	    log_warn "Unable to stop using JBoss CLI"
+    	    log_info "Stopping Wildfly 10 Application Server"
+            kill -9 $jbossPID >> /dev/null
+            sleep 5
+            f_JBossStopCheck
+	fi
+     	$c_rm -rf /u04/jboss/standalone/tmp/vfs/deployment*	
+     	$c_rm -rf /u04/jboss/standalone/tmp/vfs/temp*
+	$c_rm -rf /u04/jboss/standalone/tmp/work/jboss.web/default-host/*	
+    	local endTimeStop_l=`date +%s`
+    	local totalTimeStop_l=` $c_echo "scale=3; ($endTimeStop_l - $startTimeStop_l)" | bc `
+    	log_debug OK "Wildfly 10 Stopped. (Total Time Taken to stop the server is $totalTimeStop_l seconds )"
+    fi
+}
+
+function f_restart(){
+    f_stop
+    sleep 5
+    f_start
+}
+
+function f_reload(){
+    f_jbossUserCheck
+    #f_validate
+    local startTimeReload_l=`date +%s`
+    
+    ##  f_statusCheck before starting
+    f_getProcessInfo
+    if [ "$jbossProcessInfo" = "" ]; then
+        $c_echo "Wildfly 10 is not running. Unable to reload"
+        exit 0
+    fi
+    
+    log_debug "Reloading JBoss Configuration"
+    
+    f_cli_reload
+    
+    sleep 5
+    
+    f_JBossStartCheck
+    $c_echo "$jbossPID" > $jbossPidFile
+    
+    f_portBindingCheck
+    f_managementPortBindingCheck
+    
+    f_hnsAppCheck
+    
+    local endTimeReload_l=`date +%s`
+    local totalTimeReload_l=` $c_echo "scale=3; ($endTimeReload_l - $startTimeReload_l)" | bc `
+    log_debug OK "Wildfly 10 Reloaded. (Total Time Taken to start the server is $totalTimeReload_l seconds )"
+}
+
+
+function f_status(){
+    #f_validate
+    
+    local jbossProcessInfo_l=""
+    local jbossPID_l=""
+    
+    f_getProcessInfo
+    
+    if [ "$jbossProcessInfo" != "" ]; then
+    	f_getJBossPID
+        $c_echo "Wildfly 10 Running (PID: $jbossPID)"
+    else
+        $c_echo "Wildfly 10 Stopped"
+    fi
+    exit 0
+}
+
+function f_deployHNSApp(){
+    f_jbossUserCheck
+    #f_validate
+    
+    if [ -d "${jbossDeploymentsDir}/${hnsAppName}" ] && [ ! -f "${jbossDeploymentsDir}/${hnsAppName}.deployed" ]; then
+    	log_info "Deploying HNS Application"
+        f_deployApp "${hnsAppName}"
+        log_info OK "HNS Application Deployed"
+    
+        f_setHNSLogLevel "oss_cs_ws" ${HNS_LOG_LEVEL}
+        f_enableHNSScheduler "oss_cs_ws"
+        f_enableAppCache "oss_cs_ws"
+        f_enableConnectionWrapper "oss_cs_ws"
+        
+        f_deployWS
+        
+    elif [ ! -d "${jbossDeploymentsDir}/${hnsAppName}" ]; then
+        f_die "HNS not installed properly"    
+    elif [ -f "${jbossDeploymentsDir}/${hnsAppName}.deployed" ]; then
+        f_die "HNS app already deployed"
+    else
+        f_die "Error deploying HNS App"    
+    fi
+}
+
+function f_undeployHNSApp(){
+    f_jbossUserCheck
+    #f_validate
+    
+    if [ ! -d "${jbossDeploymentsDir}/${hnsAppName}" ]; then
+        f_die "HNS not installed properly"
+    fi
+    
+    f_undeployApp "${hnsAppName}"
+}
+
+
+function f_info(){
+    $c_echo -e "====================================================================================================="
+    $c_echo -e "\n\t\t\t${e_bold}JBoss Application Server Manager${e_normal}\n"
+    $c_echo -e "====================================================================================================="
+    $c_echo -e "\n${e_bold}DESCRIPTION${e_normal}"
+    $c_echo -e "\tThis script will help you manage Wildfly 10 Application Server" 
+    $c_echo -e "\tYou can start | stop | restart jboss server using this script" 
+    $c_echo -e "\t${e_green}Only JBoss user should execute this script${e_normal}"
+}
+
+function f_usage(){
+    $c_echo -e "\n${e_bold}USAGE${e_normal}"
+    $c_echo -e "\tmanageJBoss.sh { help | status | start | stop | restart | reload | deploy-hns | undeploy-hns }"
+    
+    $c_echo -e "\n${e_bold}OPTIONS${e_normal}"
+    
+    $c_echo -e "\t${e_bold}help${e_normal}\t\t\tFlag used to display 'usage help' for the script"
+    
+    $c_echo -e "\t${e_bold}status${e_normal}\t\t\tCheck status of Wildfly 10 Application Server"
+    $c_echo -e "\t${e_bold}start${e_normal}\t\t\tStart Wildfly 10 Application Server"
+    $c_echo -e "\t${e_bold}stop${e_normal}\t\t\tStop Wildfly 10 Application Server"
+    $c_echo -e "\t${e_bold}restart${e_normal}\t\t\tRestart Wildfly 10 Application Server"
+    $c_echo -e "\t${e_bold}reload${e_normal}\t\t\tReload Wildfly 10 Application Server configuration"
+    
+    $c_echo -e "\t${e_bold}deploy-hns${e_normal}\t\tDeploy HNS Application (if installed)"
+    $c_echo -e "\t${e_bold}undeploy-hns${e_normal}\t\tUndeploy HNS Application (if deployed)"
+    
+    $c_echo ""
+    exit 0
+}
+
+
+function f_input(){
+    case "$1" in
+      help) f_info; f_usage ;;
+      start) f_start ;;
+      stop) f_stop ;;
+      restart) f_restart ;;
+      reload) f_reload ;;
+      status) f_status ;;
+      deploy-hns) f_deployHNSApp ;;
+      undeploy-hns) f_undeployHNSApp ;;
+      *) $c_echo "Illegal option: $1"; f_info; f_usage ;;
+    esac
+}
+
+function f_validate(){
+    log_trace "Validating"
+}
+
+function f_initialize(){
+    f_defVariables
+    f_initVariables
+    
+    source $jbossInstalledPropFile
+    f_updateVariables
+    
+    source ./commonFunctions.sh
+    source ./cliFunctions.sh
+    source ./logger.sh
+    
+    init_logger
+    clear_log
+    
+    f_cmdPaths
+    f_cmdPathsCheck
+}
+
+# Main Function
+function main(){
+    f_initialize
+    f_input $*
+    popd >> /dev/null 2>&1 
+}
+
+main $*

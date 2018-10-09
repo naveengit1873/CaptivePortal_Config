@@ -1,0 +1,173 @@
+## -*- text -*-
+##
+## radiusd.conf	-- FreeRADIUS server configuration file - 3.0.12
+##
+##	http://www.freeradius.org/
+##	$Id: c62f4ffed53a073a885f243b728129f5c482fad7 $
+##
+
+######################################################################
+#
+#	Read man radiusd before editing this file.  See the section
+#	titled DEBUGGING.  It outlines a method where you can quickly
+#	obtain the configuration you want, without running into
+#	trouble.
+#
+#	Run the server in debugging mode, and READ the output.
+#
+#		$ radiusd -X
+#
+#	We cannot emphasize this point strongly enough.  The vast
+#	majority of problems can be solved by carefully reading the
+#	debugging output, which includes warnings about common issues,
+#	and suggestions for how they may be fixed.
+#
+#	There may be a lot of output, but look carefully for words like:
+#	warning, error, reject, or failure.  The messages there
+#	will usually be enough to guide you to a solution.
+#
+#	If you are going to ask a question on the mailing list, then
+#	explain what you are trying to do, and include the output from
+#	debugging mode (radiusd -X).  Failure to do so means that all
+#	of the responses to your question will be people telling you
+#	to post the output of radiusd -X.
+
+######################################################################
+#
+#  	The location of other config files and logfiles are declared
+#  	in this file.
+#
+#  	Also general configuration for modules can be done in this
+#  	file, it is exported through the API to modules that ask for
+#  	it.
+#
+#	See man radiusd.conf for documentation on the format of this
+#	file.  Note that the individual configuration items are NOT
+#	documented in that man page.  They are only documented here,
+#	in the comments.
+#
+#	The unlang policy language can be used to create complex
+#	if / else policies.  See man unlang for details.
+#
+
+prefix = /usr/local
+exec_prefix = ${prefix}
+sysconfdir = ${prefix}/etc
+localstatedir = ${prefix}/var
+sbindir = ${exec_prefix}/sbin
+logdir = /var/log/radius
+raddbdir = ${sysconfdir}/raddb
+radacctdir = ${logdir}/radacct
+
+#
+#  name of the running server.  See also the -n command-line option.
+name = radiusd
+
+#  Location of config and logfiles.
+confdir = ${raddbdir}
+modconfdir = ${confdir}/mods-config
+certdir = ${confdir}/certs
+cadir   = ${confdir}/certs
+run_dir = ${localstatedir}/run/${name}
+
+# Should likely be ${localstatedir}/lib/radiusd
+db_dir = ${raddbdir}
+
+#
+# libdir: Where to find the rlm_* modules.
+#
+#   This should be automatically set at configuration time.
+#
+#   If the server builds and installs, but fails at execution time
+#   with an 'undefined symbol' error, then you can use the libdir
+#   directive to work around the problem.
+#
+#   The cause is usually that a library has been installed on your
+#   system in a place where the dynamic linker CANNOT find it.  When
+#   executing as root (or another user), your personal environment MAY
+#   be set up to allow the dynamic linker to find the library.  When
+#   executing as a daemon, FreeRADIUS MAY NOT have the same
+#   personalized configuration.
+#
+#   To work around the problem, find out which library contains that symbol,
+#   and add the directory containing that library to the end of 'libdir',
+#   with a colon separating the directory names.  NO spaces are allowed.
+#
+#   e.g. libdir = /usr/local/lib:/opt/package/lib
+#
+#   You can also try setting the LD_LIBRARY_PATH environment variable
+#   in a script which starts the server.
+#
+#   If that does not work, then you can re-configure and re-build the
+#   server to NOT use shared libraries, via:
+#
+#	./configure --disable-shared
+#	make
+#	make install
+#
+libdir = ${exec_prefix}/lib
+
+#  pidfile: Where to place the PID of the RADIUS server.
+#
+#  The server may be signalled while it's running by using this
+#  file.
+#
+#  This file is written when ONLY running in daemon mode.
+#
+#  e.g.:  kill -HUP 
+#
+pidfile = ${run_dir}/${name}.pid
+
+#
+#  correct_escapes: use correct backslash escaping
+#
+#  Prior to version 3.0.5, the handling of backslashes was a little
+#  awkward, i.e. wrong.  In some cases, to get one backslash into
+#  a regex, you had to put 4 in the config files.
+#
+#  Version 3.0.5 fixes that.  However, for backwards compatibility,
+#  the new method of escaping is DISABLED BY DEFAULT.  This means
+#  that upgrading to 3.0.5 won't break your configuration.
+#
+#  If you don't have double backslashes (i.e. \) in your configuration,
+#  this won't matter to you.  If you do have them, fix that to use only
+#  one backslash, and then set correct_escapes = true.
+#
+#  You can check for this by doing:
+#
+#	$ grep '\\' $(find raddb -type f -print)
+#
+correct_escapes = true
+
+#  panic_action: Command to execute if the server dies unexpectedly.
+#
+#  FOR PRODUCTION SYSTEMS, ACTIONS SHOULD ALWAYS EXIT.
+#  AN INTERACTIVE ACTION MEANS THE SERVER IS NOT RESPONDING TO REQUESTS.
+#  AN INTERACTICE ACTION MEANS THE SERVER WILL NOT RESTART.
+#
+#  THE SERVER MUST NOT BE ALLOWED EXECUTE UNTRUSTED PANIC ACTION CODE
+#  PATTACH CAN BE USED AS AN ATTACK VECTOR.
+#
+#  The panic action is a command which will be executed if the server
+#  receives a fatal, non user generated signal, i.e. SIGSEGV, SIGBUS,
+#  SIGABRT or SIGFPE.
+#
+#  This can be used to start an interactive debugging session so
+#  that information regarding the current state of the server can
+#  be acquired.
+#
+#  The following string substitutions are available:
+#  - %e   The currently executing program e.g. /sbin/radiusd
+#  - %p   The PID of the currently executing program e.g. 12345
+#
+#  Standard ${} substitutions are also allowed.
+#
+#  An example panic action for opening an interactive session in GDB would be:
+#
+#panic_action = gdb %e %p
+#
+#  Again, don't use that on a production system.
+#
+#  An example panic action for opening an automated session in GDB would be:
+#
+#panic_action = gdb -silent -x ${raddbdir}/panic.gdb %e %p

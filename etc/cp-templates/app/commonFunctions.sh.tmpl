@@ -1,0 +1,679 @@
+#!/bin/bash
+
+export _POSIX2_VERSION=199209
+
+jbossHome="/u04/jboss"
+
+# Escape characters
+e_bold="\033[1m"
+e_underline="\033[4m"
+e_red="\033[0;31m"
+e_green="\033[0;32m"
+e_blue="\033[0;34m"
+e_normal="\033[0m"
+
+e_success="${e_bold}[${e_normal} ${e_green}OK${e_normal} ${e_bold}]${e_normal}"
+e_failure="${e_bold}[${e_normal} ${e_red}Failed${e_normal} ${e_bold}]${e_normal}"
+
+
+p_bold="\e[1m"
+p_underline="\e[4m"
+p_red="\e[0;31m"
+p_green="\e[0;32m"
+p_blue="\e[0;34m"
+p_normal="\e[0m"
+
+p_success="${p_bold}[${p_normal} ${p_green}OK${p_normal} ${p_bold}]${p_normal}"
+p_failure="${p_bold}[${p_normal} ${p_red}Failed${p_normal} ${p_bold}]${p_normal}"
+
+
+
+manageJBossScript=$(readlink -f "../manageJBossAS/manageJBoss.sh")
+
+function f_cmdPaths(){
+    c_awk=/usr/bin/awk
+    c_baseName=/usr/bin/basename
+    c_cat=/bin/cat
+    c_chmod=/bin/chmod
+    c_chown=/bin/chown
+    c_cp=/bin/cp
+    c_cut=/usr/bin/cut
+    c_df=/bin/df
+    c_wget=/usr/bin/wget
+    
+    c_dirName=/usr/bin/dirname
+    c_domainName=/bin/domainname
+    c_echo=/bin/echo
+    c_expr=/usr/bin/expr
+    c_find=/usr/bin/find
+    c_free=/usr/bin/free
+    c_grep=/bin/grep
+    c_head=/usr/bin/head
+    c_hostName=/bin/hostname
+    c_id=/usr/bin/id
+    c_ln=/bin/ln
+    c_ls=/bin/ls
+    c_mkdir=/bin/mkdir
+    c_mv=/bin/mv
+    c_netstat=/bin/netstat
+    c_nsLookup=/usr/bin/nslookup
+    c_passwd=/usr/bin/passwd
+    c_ping=/bin/ping
+    c_pwd=/bin/pwd
+    c_rm=/bin/rm
+    c_sed=/bin/sed
+    c_su=/bin/su
+    c_sudo=/usr/bin/sudo
+    c_tail=/usr/bin/tail
+    c_tar=/bin/tar
+    c_tee=/usr/bin/tee
+    c_touch=/usr/bin/touch
+    c_tr=/usr/bin/tr
+    c_wc=/usr/bin/wc
+}
+
+function f_cmdPathsRootUser(){
+    c_ifconfig=/sbin/ifconfig
+    c_ip=/sbin/ip
+    c_iptables=/sbin/iptables
+    c_service=/usr/sbin/service
+    c_useradd=/usr/sbin/useradd
+    c_userdel=/usr/sbin/userdel
+}
+
+# Function to check if the server has been upgraded to work with JDK1.6.0 and above
+function f_javaCheck(){
+    log_debug "Checking for JAVA 1.6.0 or higher"
+
+    local msgInstall="Please install java 1.6.0 or higher before running this script."
+    local msgUpgrade="JAVA has to be upgraded to version 1.6.0 or higher before running this script."
+
+    javaInstalled=`which java 2>&1`
+    if [ "$?" -ne 0 ]; then
+        f_die "$msgInstall"
+    fi
+
+    javaFullVerInfo=`java -fullversion 2>&1`
+    if [ "$?" -ne 0 ]; then
+        f_die "$msgInstall"
+    fi
+
+    javaFullVerInfo=`java -fullversion 2>&1 | $c_awk '{print $4}' 2>&1`
+    javaVerInfo=`$c_echo $javaFullVerInfo | $c_sed -e 's/"/''/g' -e 's/-/./g' -e 's/_/./g'`
+
+    if [ "$javaVerInfo" = "" ]; then
+         f_die "$msgInstall"
+    fi
+    javaSubVer1=`$c_echo $javaVerInfo | $c_awk -F. '{print $1}'`
+    javaSubVer2=`$c_echo $javaVerInfo | $c_awk -F. '{print $2}'`
+    javaSubVer3=`$c_echo $javaVerInfo | $c_awk -F. '{print $3}'`
+
+    if [ ! $javaSubVer1 -ge 1 -o ! $javaSubVer2 -ge 6 -o ! $javaSubVer3 -ge 0 ]; then
+        f_die "$msgUpgrade"
+    fi
+    log_debug "Found java $javaVerInfo installed on this system"
+}
+
+
+function f_cmdPathsCheck(){
+    if [ ! -x $c_awk -o ! -x $c_baseName -o ! -x $c_cat -o ! -x $c_chmod -o ! -x $c_chown -o ! -x $c_cp -o ! -x $c_cut -o ! -x $c_df -o ! -x $c_dirName -o ! -x $c_domainName -o ! -x $c_echo -o ! -x $c_expr -o ! -x $c_find -o ! -x $c_free -o ! -x $c_grep -o ! -x $c_head  -o ! -x $c_hostName -o ! -x $c_id -o ! -x $c_ln  -o ! -x $c_mkdir -o ! -x $c_mv -o ! -x $c_ls -o ! -x $c_netstat -o ! -x $c_nsLookup -o ! -x $c_passwd -o ! -x $c_ping -o ! -x $c_pwd -o ! -x $c_rm -o ! -x $c_sed -o ! -x $c_su -o ! -x $c_sudo -o ! -x $c_tail -o ! -x $c_tar -o ! -x $c_tee -o ! -x $c_touch -o ! -x $c_tr -o ! -x $c_wc ] ; then
+    f_die "Some of the commands listed in the script does not exists in the path defined in the script. Hence cannot proceed."
+    fi
+}
+
+function f_cmdPathsCheckRootUser(){
+    if [ ! -x $c_ifconfig -o ! -x $c_ip -o ! -x $c_iptables -o ! -x $c_service -o ! -x $c_useradd -o ! -x $c_userdel ] ; then
+    f_die "Some of the commands listed in the script does not exists in the path defined in the script.  Hence cannot proceed."
+    fi
+}
+
+
+# Function to convert to uppercase
+function f_uppercase(){
+    $c_echo $1 | $c_tr '[a-z]' '[A-Z]'
+}
+
+# Not used 
+function f_success(){
+    $c_echo -e "${e_bold}[${e_normal} ${e_green}OK${e_normal} ${e_bold}]${e_normal}"
+}
+# Not used 
+function f_failure(){
+    $c_echo -e "${e_bold}[${e_normal} ${e_red}Failed${e_normal} ${e_bold}]${e_normal}"
+}
+
+function f_echo(){
+    $c_echo "$1"
+}
+
+function f_die(){
+    log_error "$1"
+    exit 1
+}
+
+function f_escapeForwardSlash(){
+    local l_var="$1"; shift;
+    $c_echo ${l_var//\//\\/}
+}
+
+function f_undoEscapeForwardSlash(){
+    local l_var="$1"; shift;
+    $c_echo ${l_var//\\/}
+}
+
+
+# Not been used currently
+function f_getSystemIP(){
+    local l_ip=""
+    l_ip=`$c_ifconfig eth0 | grep 'inet addr' | cut -d: -f2 | awk '{print $1}'`
+    if [ "$l_ip" = "" ]; then
+	l_ip=`$c_ifconfig eth1 | grep 'inet addr' | cut -d: -f2 | awk '{print $1}'`
+    fi
+    if [ "$l_ip" = "" ]; then
+	exit 1
+    fi
+    $c_echo $l_ip
+}
+
+function f_fileCheck(){
+    local fileName_l="$1"
+    
+    log_debug "Checking file $fileName_l"
+    
+    if [ ! -f "$fileName_l" ]; then
+	f_die "$fileName_l : File does not exist"
+    elif [ ! -r "$fileName_l" ]; then
+	f_die "$fileName_l : File does not have read permission"
+    fi
+}
+
+function f_dirCheck(){
+    local dirName_l="$1"
+    
+    log_debug "Checking Directory $dirName_l"
+  
+    if [ ! -d "$dirName_l" ]; then
+	f_die "$dirName_l : Directory does not exist"
+    elif [ ! -w "$dirName_l" ]; then
+	f_die "$dirName_l : Directory does not have write permission"
+    fi
+
+}
+
+function f_removeFile(){
+    local fileName_l="$1"
+    
+    if [ -f "$fileName_l" ]; then
+	$c_rm -f "$fileName_l"
+	log_debug OK "Deleted file $fileName_l"
+    fi
+}
+
+function f_removeDir(){
+    local directoryName_l="$1"
+    
+    if [ -d "$directoryName_l" ] &&  [ "$directoryName_l" != "/" ] ; then
+	$c_rm -rf "$directoryName_l"
+	log_debug OK "Deleted directory $directoryName_l"
+    fi
+}
+
+function f_mkdir(){
+    local directoryName_l="$1"
+    
+    if [ ! -d $directoryName_l ] ; then
+        log_debug "Creating directory $directoryName_l"
+	$c_mkdir $directoryName_l
+    else
+	log_debug "Direcory $directoryName_l already exists"
+    fi
+}
+
+function f_mkdirP(){
+    local directoryName_l="$1"; shift
+    
+    if [ ! -d $directoryName_l ] ; then
+        log_debug "Creating directory $directoryName_l"
+	$c_mkdir -p $directoryName_l
+    else
+	log_debug "Direcory $directoryName_l already exists"
+    fi
+}
+
+
+function f_cpFilesR(){
+    local src_l="$1"; shift
+    local dst_l="$1"; shift
+    
+    if [ ! -d $directoryName_l ] ; then
+        log_error "$dst_l doesn't exist cannot copy files"
+    else
+        log_debug "Copying files from $src_l to $dst_l "
+        $c_cp -r $src_l/* "$dst_l"
+    fi
+}
+
+function f_chown(){
+    local userName_l="$1"; shift
+    local fileName_l="$1"; shift
+   
+    if [ "$fileName_l" != "/" ] ; then
+        $c_chown $userName_l.$userName_l $fileName_l
+    else
+        log_error "Oopss ! You are trying to change the permission of root directory !!!"
+    fi
+}
+
+function f_chownR(){
+    local userName_l="$1"; shift
+    local directoryName_l="$1"; shift
+   
+    if [ "$directoryName_l" != "/" ] ; then
+        $c_chown -R $userName_l.$userName_l $directoryName_l
+    else
+        log_error "Oopss ! You are trying to change the permission of root directory !!!"
+    fi
+}
+
+# Revisit !
+function f_backupFileName(){
+    local fileName_l="$1"
+    local date_time_l=`date +%Y_%m_%d_%H_%M_%S`
+
+    if [ -s $fileName_l ]; then
+	$c_echo ${fileName_l}_${date_time_l}
+    fi
+}
+
+# Function to check if Root user is executing the script
+function f_rootUserCheck(){
+    log_info "Checking whether root user is executing the script"
+
+    local name_l=`$c_id -un`
+    local uname_l=`f_uppercase $name_l`
+
+    if [ "$uname_l" != "ROOT" ]; then
+        f_die "Only user 'root' should execute this script." 
+    fi
+}
+
+function f_jbossUserCheck(){
+    log_debug "Checking whether jboss user is executing the script"
+
+    local name_l=`$c_id -un`
+    
+    if [ "$name_l" != "$jbossUser" ]; then
+        f_die "Only user '$jbossUser' should execute this script."
+    fi
+}
+
+# Function to check if the server has been upgraded to work with JDK1.6.0 and above
+function f_javaCheck(){
+    log_info "Checking for JAVA 1.6.0 or higher"
+
+    local msgInstall="Please install java 1.6.0 or higher before running this script."
+    local msgUpgrade="JAVA has to be upgraded to version 1.6.0 or higher before running this script."
+    
+    javaInstalled=`which java 2>&1`
+    if [ "$?" -ne 0 ]; then
+        f_die "$msgInstall"
+    fi
+
+    javaFullVerInfo=`java -fullversion 2>&1`
+    if [ "$?" -ne 0 ]; then
+        f_die "$msgInstall"
+    fi
+
+    javaFullVerInfo=`java -fullversion 2>&1 | $c_awk '{print $4}' 2>&1`
+    javaVerInfo=`$c_echo $javaFullVerInfo | $c_sed -e 's/"/''/g' -e 's/-/./g' -e 's/_/./g'`
+
+    if [ "$javaVerInfo" = "" ]; then
+         f_die "$msgInstall"
+    fi
+    javaSubVer1=`$c_echo $javaVerInfo | $c_awk -F. '{print $1}'`
+    javaSubVer2=`$c_echo $javaVerInfo | $c_awk -F. '{print $2}'`
+    javaSubVer3=`$c_echo $javaVerInfo | $c_awk -F. '{print $3}'`
+    
+    if [ ! $javaSubVer1 -ge 1 -o ! $javaSubVer2 -ge 6 -o ! $javaSubVer3 -ge 0 ]; then
+        f_die "$msgUpgrade"
+    fi
+    
+    log_info OK "Found java $javaVerInfo installed on this system"
+     
+    if [ "$JAVA_HOME" = "" ]; then
+    	f_die "Please set JAVA_HOME Environment variable before starting this script"
+    fi
+   
+    local javacFlag_l=`$c_find $JAVA_HOME/bin -name 'javac'`
+    local javacFlag_l=`basename ${javacFlag_l}`
+    if [ "$javacFlag_l" != "javac" ]; then
+    	f_die "Please check whether java jdk is installed properly. We are unable to find javac executable file. It seems like you have installed only JRE. Also check whether JAVA_HOME environmetn variable is set properly"
+    fi
+    
+}
+
+
+function f_apacheCheck()
+{
+    log_info "Checking whether Apache2 is installed"
+
+    local msgInstall="Please install apache2 server before running this script. Use 'yum install httpd mod_ssl' for apache with ssl support"
+     
+    httpdInstalled=`which httpd 2>&1`
+    if [ "$?" -ne 0 ]; then
+        f_die "$msgInstall"
+    fi
+    
+    httpdVerInfo=`httpd -v 2>&1 | $c_tr -s ' ' | $c_grep -i Apache | $c_awk '{print $3}'`
+    if [ "$httpdVerInfo" = "" ]; then
+    	 f_die "$msgInstall"
+    fi
+    
+    httpdVer=`$c_echo $httpdVerInfo | $c_cut -d '/' -f 2`
+    log_info OK "Found Apache $httpdVer installed on this system"
+    
+    
+    log_info "Checking necessary apache modules"
+    httpdRootDir=`httpd -V 2>&1 | grep HTTPD_ROOT | awk '{print $2}' | cut -d '=' -f 2 | cut -d '"' -f 2 `
+    
+    
+    httpdModProxy=`ls "$httpdRootDir/modules/" | grep mod_proxy.so `
+    if [ "$httpdModProxy" != "mod_proxy.so" ]; then
+    	 f_die "httpd mod_proxy.so module is not installed"
+    fi
+    httpdLoadModProxy=`httpd -M 2>&1 | grep proxy_module | awk '{print $1}'`
+    if [ "$httpdLoadModProxy" != "proxy_module" ]; then
+    	 f_die "httpd proxy_module not loaded"
+    fi
+    
+    httpdModSSL=`ls "$httpdRootDir/modules/" | grep mod_ssl.so `
+    if [ "$httpdModSSL" != "mod_ssl.so" ]; then
+    	 f_die "httpd mod_ssl.so module is not installed. Use 'yum install mod_ssl' to install mod_ssl"
+    fi
+    httpdLoadModSSL=`httpd -M 2>&1 | grep ssl_module | awk '{print $1}'`
+    if [ "$httpdLoadModSSL" != "ssl_module" ]; then
+    	 f_die "httpd ssl_module not loaded"
+    fi
+}
+
+function f_restartApache(){
+    log_info "Reloading Apache "
+    local httpdFlag_l=`$c_service httpd restart >> /dev/null 2>&1 `
+}
+
+function f_opensslCheck(){
+    log_info "Checking whether openssl is installed"
+
+    local msgInstall="Please install openssl before running this script"
+    
+    opensslInstalled=`which openssl 2>&1`
+    if [ "$?" -ne 0 ]; then
+        f_die "$msgInstall"
+    fi
+    
+    opensslVerInfo=`ssh -V 2>&1`
+    if [ "$opensslVerInfo" = "" ]; then
+    	 f_die "$msgInstall"
+    fi
+    
+    opensslVer=`$c_echo $opensslVerInfo | $c_cut -d ',' -f 2 | $c_cut -d ' ' -f 3 | $c_cut -d '-' -f 1`
+    log_info OK "Found openssl $opensslVer installed on this system"
+}
+
+
+function f_diskSpaceCheck(){
+    log_info "Checking Disk Space"
+
+    spaceAvailable=`$c_df -B 1M / | $c_grep -v Filesystem | $c_awk '{print $4}'`
+    if [ -z ${spaceAvailable} ] ; then
+        f_die "Unable to determine the free hard disk space.  This is required for JBoss 7.1 AS installation, hence exiting."
+    else
+        # Required space is atleast 2 GB.
+        if [ ${spaceAvailable} -lt ${reqHardDiskSpace} ] ; then
+            f_die "You do not have ${reqHardDiskSpace} MB of available space. You only have ${spaceAvailable} MB.  This is required for JBoss 7.1 AS, hence exiting."
+        else
+            log_info OK "You have adequate hard disk of $spaceAvailable MB."
+        fi    
+    fi
+}
+
+function f_portCheck(){
+    local portNo_l="$1"
+     
+    if $c_echo "$portNo_l" | egrep -q '[^0-9]' ; then
+        f_die "$portNo_l: is not a valid port number"
+    fi
+    
+    if [ "$portNo_l" -le 1024 ]; then
+        f_die "$portNo_l: is not a valid port number. The Port Number should not be less than 1024"
+    fi
+    if [ "$portNo_l" -ge 65535 ]; then
+        f_die "$portNo_l: is not a valid port number. The Port Number should not be greater than 65535"
+    fi
+
+    local portUsedCount_l=`netstat -punta | tr -s ' ' | grep ":$portNo_l " | grep LISTEN | grep -vi grep | wc -l`
+    
+    if [ "$portUsedCount_l" -ne 0 ]; then 
+        f_die "Port $portNo_l is used by some process. Please stop the process before executing this script or choose a differnet port"
+    fi
+
+}
+
+
+function f_createSelfSignedCertificate(){
+    log_info "Generating Self Signed Certificate"
+
+    f_removeFile "$certificateFilePath"
+    f_removeFile "$certificateKeyFilePath"
+        
+    openssl req -new -newkey rsa:1024 -nodes -x509 \
+        -subj "/CN=${SSLCommonName}/O=${SSLOrg}/L=${SSLOrgLocation}/ST=${SSLOrgState}/C=${SSLOrgCountry}" \
+        -keyout "${certificateKeyFilePath}" -out "${certificateFilePath}"  >> /dev/null 2>&1
+
+    log_info OK "Successfully Generated Self Signed Certificate"
+}
+
+function f_createKeyStore(){
+    log_info "Generating Keystore "
+    
+    f_removeFile "/home/$jbossUser/$jbossKeystoreFile"
+
+    $JAVA_HOME/bin/keytool -genkey -alias $jbossKeystoreAlias \
+    	-keyalg RSA -keystore "/home/$jbossUser/$jbossKeystoreFile" \
+    	-keypass $jbossKeystorePassword -storepass $jbossKeystorePassword \
+    	-dname "CN=${SSLCommonName},OU=${SSLOrgUnit},O=${SSLOrg},L=${SSLOrgLocation},ST=${SSLOrgState},C=${SSLOrgCountry}"  >> /dev/null 2>&1
+
+    $c_chown -R $jbossUser.$jbossUser "/home/$jbossUser/$jbossKeystoreFile"
+    
+    log_info OK "Successfully Generated Keystore"
+}
+
+
+function f_deployWS(){
+    pushd "$jbossHome/../hns/bin" >> /dev/null 2>&1 
+    	log_info "Deploying Web Services"
+    	
+	sh  ws-deploy.sh
+    	
+        if [ "$?" -eq "0" ]; then
+            log_info OK "Web Services deployed Successfully"
+        else
+            log_error FAILED "Web Services Deployment Failed. Some of the web services are not deployed"
+        fi
+    popd >> /dev/null 2>&1
+}
+
+
+function f_getProcessInfo(){
+    jbossProcessInfo=`ps -ef | $c_grep jboss | $c_grep standalone.xml | $c_grep java | $c_grep server | $c_grep -vi grep`
+}
+
+function f_startJbossRoot(){
+   $c_su - $jbossUser -c "$manageJBossScript start"
+}
+
+
+function f_stopJbossRoot(){    
+    f_getProcessInfo
+    
+    if [ "$jbossProcessInfo" != "" ]; then
+    	f_undeployHNSApp
+        $c_su - $jbossUser -c "$manageJBossScript stop"
+    fi
+}
+
+
+function f_startJboss(){
+   $manageJBossScript start
+}
+
+function f_stopJboss(){
+    f_getProcessInfo
+    
+    if [ "$jbossProcessInfo" != "" ]; then
+    	f_undeployHNSApp
+        $manageJBossScript stop
+    fi   
+}
+
+function f_reloadJboss(){
+    $manageJBossScript reload
+}
+
+
+function f_deployHNSApp(){
+    $manageJBossScript deploy-hns
+}
+
+function f_undeployHNSApp(){
+    $manageJBossScript undeploy-hns
+}
+
+
+
+# Y/N Prompt
+function f_confirm {
+    local promptMsg="$1"
+    local defaultVal="${2:-}"
+
+    if [ "${defaultVal}" = "Y" ]; then
+        defaultPrompt="${e_blue}${e_bold}Y${e_normal}/n"
+    elif [ "${defaultVal}" = "N" ]; then
+        defaultPrompt="y/${e_blue}${e_bold}N${e_normal}"
+    else
+        defaultPrompt="y/n"
+    fi
+
+    $c_echo -e -n "${promptMsg} ${e_bold}[${e_normal} ${defaultPrompt} ${e_bold}]${e_normal} "
+    read REPLY
+
+    if [ -z "${REPLY}" ]; then
+        REPLY=${defaultVal}
+    fi
+
+    case "$REPLY" in
+        Y*|y*) return 0 ;;
+        N*|n*) return 1 ;;
+    esac
+}
+
+
+# Read Input using prompt
+function f_readInput(){
+    local promptMsg="$1"
+    local defaultVal="${2:-}"
+
+    $c_echo -e -n "${promptMsg} ${e_bold}[${e_normal} ${e_blue}${e_bold}${defaultVal}${e_normal} ${e_bold}]${e_normal} "
+    read REPLY
+
+    if [ -z "${REPLY}" ]; then
+        REPLY=${defaultVal}
+    fi
+}
+
+# Not used ( useful for silent prompt )
+# Read Input using prompt silently (without showing what user has typed)
+function f_readInputSilent(){
+    local promptMsg="$1"
+    local defaultVal="${2:-}"
+
+    $c_echo -e -n "${promptMsg} ${e_bold}[${e_normal} ${e_blue}${e_bold}${defaultVal}${e_normal} ${e_bold}]${e_normal} "
+    read -s REPLY
+
+    if [ -z "${REPLY}" ]; then
+        REPLY=${defaultVal}
+    fi
+}
+
+
+function f_cacheUtil(){
+    local serviceName=$1; shift
+    local paramStr="$1"; shift
+    local successMsg="$1"; shift
+    local failureMsg="$1"; shift
+    
+    $c_wget "http://localhost:8080/${serviceName}/CacheUtil.jsp?${paramStr}" -O /tmp/cacheutil_{$$} > /dev/null 2>&1
+    if [ $? -eq 0 ] ; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function f_setHNSLogLevel(){
+    local serviceName=$1; shift
+    local logLevel=$1; shift
+
+    local successMsg="Log level is set to '${logLevel}' mode"
+    local failureMsg="Log level is not set to '${logLevel}' mode. Please investigate it and enable it manually"
+    
+    if f_cacheUtil oss_cs_ws "operation=Logger&level=${logLevel}"; then
+        log_info OK "${successMsg}"
+    else
+        log_error FAILED "${failureMsg}"
+    fi
+}
+
+function f_enableHNSScheduler(){
+    local serviceName=$1; shift
+
+    local successMsg="Schedulers started successfully"
+    local failureMsg="Schedulers are not started. Please investigate it and start it manually"
+    
+    if f_cacheUtil oss_cs_ws "operation=SchedulerStart" ; then
+        log_info OK "${successMsg}"
+    else
+        log_error FAILED "${failureMsg}"
+    fi
+    
+}
+
+function f_enableAppCache(){
+    local serviceName=$1; shift
+    
+    local successMsg="Application Cache Building Process started successfully"
+    local failureMsg="Application Cache Building Process is not started. Please investigate it and start it manually"
+    
+    if f_cacheUtil oss_cs_ws "operation=Cache" ; then
+        log_info OK "${successMsg}"
+    else
+        log_error FAILED "${failureMsg}"
+    fi
+    
+}
+
+function f_enableConnectionWrapper(){
+    local serviceName=$1; shift
+    
+    local successMsg="Connection Wrapper is enabled"
+    local failureMsg="Connection Wrapper is not enabled. Please investigate it and enable it manually"
+        
+    if f_cacheUtil oss_cs_ws "logQuery=true" ; then
+        log_info OK "${successMsg}"
+    else
+        log_error FAILED "${failureMsg}"
+    fi
+    
+}
+
+

@@ -1,0 +1,46 @@
+#!/bin/bash
+
+export HOME=/root
+PID_FILE=/var/run/unison.pid
+
+function start_app {
+/usr/bin/unison -socket 9999 &
+echo -n $! > "$PID_FILE"
+}
+
+function stop_app {
+PID=`cat $PID_FILE`
+kill -- -$(ps -o pgid= $PID | grep -o [0-9]*)
+rm -rf $PID_FILE
+}
+
+function status_app {
+if [ -f "$PID_FILE" ]; then
+     PID=`cat $PID_FILE`
+     if ps --pid $PID 2>&1 1>/dev/null; then
+       echo "Unison is running at ${PID}"
+     else
+       echo "$PID_FILE found, but $PID is not running"
+     fi
+     unset PID
+   else
+     echo "Unison is stopped"
+fi
+}
+
+case $1 in
+start)
+start_app ;;
+stop)
+stop_app ;;
+restart)
+stop_app
+start_app ;;
+status)
+status_app
+;;
+*)
+
+echo "usage: unisond {start|stop|restart|status}" ;;
+esac
+exit 0

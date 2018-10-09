@@ -1,0 +1,3 @@
+check process RabbitMQ-Server with pidfile /var/lib/rabbitmq/mnesia/rabbit.pid
+   start program = "/etc/init.d/rabbitmq-server start"
+   stop  program = "/etc/init.d/rabbitmq-server stop"

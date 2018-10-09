@@ -1,0 +1,57 @@
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PID_FILE=/usr/local/var/run/radiusd/radiusd.pid
+LOG_DIR=/var/log/captiveportal/radius
+
+#export AAA_SERVER_DEBUG_MODE=1
+export `cat /etc/captiveportal.conf | grep AAA_SERVER_DEBUG_MODE`
+
+function start_app {
+[ ! -f $PID_FILE ] && touch $PID_FILE
+[ ! -d $LOG_DIR ] && mkdir -p $LOG_DIR
+
+if [ $AAA_SERVER_DEBUG_MODE -eq 1 ]; then
+        /usr/local/sbin/radiusd -X -P $PID_FILE -l $LOG_DIR/radius.log 2>&1 &
+else
+        /usr/local/sbin/radiusd -l $LOG_DIR/radius.log 2>&1 &
+fi
+}
+
+function stop_app {
+PID=`cat $PID_FILE`
+kill $PID
+sleep 3
+rm -f $PID_FILE
+}
+
+function status_app {
+if [ -f "$PID_FILE" ]; then
+     PID=`cat $PID_FILE`
+     if ps --pid $PID 2>&1 1>/dev/null; then
+       echo "RADIUS/AAA Server is already running at ${PID}"
+     else
+       echo "$PID_FILE found, but $PID is not running"
+     fi
+     unset PID
+   else
+     echo "RADIUS/AAA Server is stopped"
+fi
+}
+
+case $1 in
+start)
+start_app ;;
+stop)
+stop_app ;;
+restart)
+stop_app
+start_app ;;
+status)
+status_app
+;;
+*)
+
+echo "usage: radiusd {start|stop|restart|status}" ;;
+esac
+exit 0

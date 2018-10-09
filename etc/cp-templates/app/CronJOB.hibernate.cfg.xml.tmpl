@@ -1,0 +1,81 @@
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        \"-//Hibernate/Hibernate Configuration DTD 3.0//EN\"
+        \"http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd\">
+
+<hibernate-configuration>
+	<session-factory>
+		<!-- Database connection settings -->
+		<property name=\"connection.driver_class\">com.mysql.jdbc.Driver</property>
+		<property name=\"connection.url\">jdbc:mysql://${APP_SERVER_DATABASE_IP}:${APP_SERVER_DATABASE_PORT}/${APP_SERVER_DATABASE_NAME}?autoReconnect=true</property>
+		<property name=\"connection.username\">${APP_SERVER_DATABASE_USER}</property>
+		<property name=\"connection.password\">${APP_SERVER_DATABASE_PASSWORD}</property>
+		<!-- <property name=\"connection.pool_size\">1</property> -->
+		<property name=\"hibernate.c3p0.initialPoolSize\">20</property>
+		<property name=\"hibernate.c3p0.min_size\">5</property>
+		<property name=\"hibernate.c3p0.max_size\">80</property>
+		<property name=\"hibernate.c3p0.timeout\">600</property>
+		<property name=\"hibernate.c3p0.max_statements\">50</property>
+		<property name=\"hibernate.c3p0.maxIdleTime\">1800</property>
+		<property name=\"hibernate.c3p0.idleConnectionTestPeriod\">1000</property>
+		<property name=\"hibernate.c3p0.acquire_increment\">2</property>
+		<property name=\"hibernate.c3p0.acquireRetryAttempts\">2</property>
+		<!-- <property name=\"hibernate.c3p0.checkoutTimeout\">1000</property> -->
+
+		<property name=\"hibernate.c3p0.acquireRetryDelay\">250</property>
+		<property name=\"hibernate.c3p0.testConnectionOnCheckin\">false</property>
+		<property name=\"hibernate.c3p0.testConnectionOnCheckout\">true</property>
+
+		<property name=\"hibernate.connection.provider_class\">
+			org.hibernate.c3p0.internal.C3P0ConnectionProvider</property>
+		<property name=\"hibernate.connection.release_mode\">AFTER_TRANSACTION</property>
+		<!-- SQL dialect -->
+		<property name=\"dialect\">org.hibernate.dialect.MySQLDialect</property>
+
+		<!-- Enable Hibernate's automatic session context management -->
+		<property name=\"current_session_context_class\">thread</property>
+
+		<!-- Disable the second-level cache -->
+		<property name=\"cache.provider_class\">org.hibernate.cache.NoCacheProvider</property>
+
+		<!-- Show all executed SQL to stdout -->
+		<property name=\"show_sql\">true</property>
+
+		<!-- Drop and re-create the database schema on startup -->
+		<property name=\"hbm2ddl.auto\">update</property>
+
+		<!-- Mapping files -->
+		<mapping class=\"com.pronto.model.CustomerSessionBean\" />
+		<mapping class=\"com.pronto.model.CustomerBean\" />
+		<mapping class=\"com.pronto.model.TimeZone\" />
+		<mapping class=\"com.pronto.model.CustomerSessionAnalytics\" />
+		<mapping class=\"com.pronto.model.CustomerSessionBeanDetails\" />
+		<mapping class=\"com.pronto.model.RadiusProfileBean\" />
+		<!-- <mapping class=\"com.pronto.model.RadiusVariables\"/> -->
+		<mapping class=\"com.pronto.model.RadiusPolicyBean\" />
+		<!-- <mapping class=\"com.pronto.model.RadiusPolicyVariables\"/> -->
+
+		<mapping class=\"com.pronto.model.RadiusProfileRelBean\" />
+		<mapping class=\"com.pronto.model.RadiusPolacyRelBean\" />
+
+		<mapping class=\"com.pronto.model.UserAccessBeanDetails\" />
+		<mapping class=\"com.pronto.model.SubscriptionSalesDetails\" />
+		<mapping class=\"com.pronto.model.BandwidthDetails\" />
+		<mapping class=\"com.pronto.model.VoucherSalesReport\" />
+		<mapping class=\"com.pronto.model.GeneratedBillsReport\" />
+		<mapping class=\"com.pronto.model.PaymentGatewayTransactionReport\" />
+		<mapping class=\"com.pronto.model.VoucherDistributionReport\" />
+		<mapping class=\"com.pronto.model.RegisteredUsersReportBean\" />
+		<mapping class=\"com.pronto.model.ProntoWispLocationBean\" />
+		<mapping class=\"com.pronto.model.TagsBean\" />
+		<mapping class=\"com.pronto.model.TaggingsBean\" />
+
+		<mapping class=\"com.pronto.model.LdapConfigBean\" />
+		<mapping class=\"com.pronto.model.ProntoLdapFilters\" />
+		<mapping class=\"com.pronto.model.ProntoLdapAttribBean\" />
+		<mapping class=\"com.pronto.model.ProntoLdapPassKey\" />
+
+
+
+	</session-factory>
+</hibernate-configuration>

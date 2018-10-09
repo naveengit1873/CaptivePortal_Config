@@ -1,0 +1,52 @@
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PID_FILE=/var/run/splash_server.pid
+LOG_DIR=/var/log/captiveportal/web
+LOG_FILE=/var/log/captiveportal/web/splashserver.log
+
+function start_app {
+[ ! -d $LOG_DIR ] && mkdir -p $LOG_DIR
+[ ! -f $LOG_FILE ] && touch $LOG_FILE
+chown syslog.adm $LOG_FILE
+
+/bin/splashserver > /dev/null 2>&1
+}
+
+function stop_app {
+PID=`cat $PID_FILE`
+kill $PID
+sleep 3
+rm -rf $PID_FILE
+}
+
+function status_app {
+if [ -f $PID_FILE ]; then
+     PID=`cat $PID_FILE`
+     if ps --pid $PID 2>&1 1>/dev/null; then
+       echo "SplashServer is running at ${PID}"
+     else
+       echo "$PID_FILE found, but $PID is not running"
+     fi
+     unset PID
+   else
+     echo "SplashServer is stopped"
+fi
+}
+
+case $1 in
+start)
+start_app ;;
+stop)
+stop_app ;;
+restart)
+stop_app
+start_app ;;
+status)
+status_app
+;;
+*)
+
+echo "usage: splashserver {start|stop|restart|status}" ;;
+esac
+exit 0

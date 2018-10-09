@@ -1,0 +1,68 @@
+##########################################################
+############ Soapradius configuration ####################
+##########################################################
+
+LISTEN_IP=${AAA_SOAP_RADIUS_BIND_IP}
+LISTEN_PORT=8888
+
+### Run soapradius in daemon mode
+DAEMONIZE=1
+
+### Enable debug mode
+DEBUG_ENABLE=1
+
+### Log configuration
+LOG_DESTINATION=SYSLOG
+LOG_LEVEL=DEBUG
+
+### Application server URL
+APP_URL=${AAA_APP_SERVER_URL}
+
+### Interim inerval time (in secs)
+MAX_INTERIM_INTERVAL=1500
+
+### PREAUTH_TIMEOUT is the timeout within which A 802.1x or
+PREAUTH_TIMEOUT=1200
+
+CLEANUP_INTERVAL=60
+
+AUTH_STARTED_TIMEOUT=8
+
+ACCT_STARTED_TIMEOUT=8
+
+### Enable using radclient commnad to send RADIUS requests
+USE_RADCLIENT=0
+
+### Enable VSA
+VSA_ENABLE=1
+
+### CONNECTION_LIMIT is the maximum connections soapradius can handle parallely
+### Since we are server, the minimum value should be 10000
+### If it is commented or lower value than 10000 is given, we defaults to 10000
+CONNECTION_LIMIT=20000
+
+TWAG_NASID_TYPE=DONTCHANGE
+
+### Datasource details (to store cache)
+USE_MYSQL=1
+KPI_ENABLE=0
+MYSQL_HOSTNAME=${AAA_DATABASE_IP}
+MYSQL_PORT=${AAA_DATABASE_PORT}
+MYSQL_USERNAME=${AAA_DATABASE_USER}
+MYSQL_PASSWORD=${AAA_DATABASE_PASSWORD}
+MYSQL_DATABASE=${AAA_DATABASE_NAME}
+
+### Enable SSL to make soapradius to use HTTPS 
+SSL_ENABLE=0
+SIGNED_KEY_PEM=valid_path_to_key
+SIGNED_CERT_PEM=valid_path_to_cert
+
+### RabbitMQ details
+RABBITMQ_ENABLE=1
+RABBITMQ_HOSTNAME=${AAA_RABBITMQ_HOSTNAME}
+RABBITMQ_PORT=${AAA_RABBITMQ_PORT}
+RABBITMQ_USERNAME=${AAA_RABBITMQ_USERNAME}
+RABBITMQ_PASSWORD=${AAA_RABBITMQ_PASSWORD}
+RABBITMQ_EXCHANGE=${AAA_RABBITMQ_EXCHANGE}
+RABBITMQ_BINDING_KEY=${AAA_RABBITMQ_BINDING_KEY}
+RABBITMQ_VHOST=/

@@ -1,0 +1,3 @@
+check process Splash-Server with path /var/run/splash_server.pid
+   start program = "/root/scripts/splashserverd start" as uid "root" and gid "root" with timeout 60 seconds
+   stop program = "/root/scripts/splashserverd stop" as uid "root" and gid "root"

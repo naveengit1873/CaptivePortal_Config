@@ -1,0 +1,11 @@
+/var/log/captiveportal/radius/radius.log {
+       su root
+       daily
+       rotate 30
+       copytruncate
+       delaycompress
+       compress
+       dateext
+       notifempty
+       missingok
+}

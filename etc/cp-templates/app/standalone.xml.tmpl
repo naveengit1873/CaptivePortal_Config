@@ -618,6 +618,7 @@
                 <https-listener name="default-ssl" security-realm="SslRealm" socket-binding="https"/>
                 <host name="default-host" alias="localhost">
                     <location name="/" handler="welcome-content"/>
+		    <access-log/>
                     <filter-ref name="server-header"/>
                     <filter-ref name="x-powered-by-header"/>
                 </host>

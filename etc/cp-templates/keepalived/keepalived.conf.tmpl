@@ -1,5 +1,12 @@
 ! Configuration File for keepalived
 
+vrrp_script chk_nginx {
+  script       "/etc/init.d/nginx status"
+  interval 2   # check every 2 seconds
+  fall 2       # require 2 failures for Ok
+  rise 2       # require 2 successes for OK
+}
+
 vrrp_instance Interface-A {
     state MASTER
     interface eth1
@@ -10,6 +17,9 @@ vrrp_instance Interface-A {
     authentication {
         auth_type PASS
         auth_pass pr0nt0xl
+    }
+    track_script {
+        chk_nginx
     }
     virtual_ipaddress {
         172.17.170.124/28
@@ -26,6 +36,9 @@ vrrp_instance Interface-B {
     authentication {
         auth_type PASS
         auth_pass pr0nt0xl
+    }
+    track_script {
+        chk_nginx
     }
     virtual_ipaddress {
         172.17.170.9/28

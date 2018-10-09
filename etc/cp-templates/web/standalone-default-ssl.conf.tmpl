@@ -135,10 +135,10 @@
         	ProxyPass /OneBox/splash/splogin http://127.0.0.1:8088/splogin
 	    	ProxyPass /OneBox/splash/spsuccess http://127.0.0.1:8088/spsuccess
 
-		ProxyPassMatch ^/OneBox/splash/.*[.](html|js|jpeg|png)$ !
-		ProxyPassMatch ^/OneBox/splash/lib/.*[.](html|js|jpeg|png)$ !
-		ProxyPassMatch ^/OneBox/splash/css/.*[.](html|js|jpeg|png)$ !
-		ProxyPassMatch ^/OneBox/splash/images/.*[.](html|js|jpeg|png)$ !
+		#ProxyPassMatch ^/OneBox/splash/.*[.](html|js|jpeg|png)$ !
+		#ProxyPassMatch ^/OneBox/splash/lib/.*[.](html|js|jpeg|png)$ !
+		#ProxyPassMatch ^/OneBox/splash/css/.*[.](html|js|jpeg|png)$ !
+		#ProxyPassMatch ^/OneBox/splash/images/.*[.](html|js|jpeg|png)$ !
 
         	# Passes w r t Jboss server
 	    	ProxyPass /OneBox/ ${WEB_APP_SERVER_URL}/OneBox/

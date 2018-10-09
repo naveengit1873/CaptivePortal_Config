@@ -1,0 +1,23 @@
+#!/bin/bash
+
+TYPE=$1
+NAME=$2
+STATE=$3
+
+case $STATE in
+        "MASTER") sed -i '/100.64.78.36/s/^#*//g' /opt/nginx/conf/nginx.conf
+                  /etc/init.d/nginx restart
+                  exit 0
+                  ;;
+        "BACKUP") sed -i '/100.64.78.36/s/^/#/g' /opt/nginx/conf/nginx.conf
+                  /etc/init.d/nginx restart
+                  exit 0
+                  ;;
+        "FAULT")  sed -i '/100.64.78.36/s/^/#/g' /opt/nginx/conf/nginx.conf
+        		  /etc/init.d/nginx stop
+                  exit 0
+                  ;;
+        *)        echo "unknown state"
+                  exit 1
+                  ;;
+esac

@@ -2,8 +2,14 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 PID_FILE=/var/run/dns_manager.pid
+LOG_DIR=/var/log/captiveportal/named
+LOG_FILE=/var/log/captiveportal/named/dnsmanager.log
 
 function start_app {
+[ ! -d $LOG_DIR ] && mkdir -p $LOG_DIR
+[ ! -f $LOG_FILE ] && touch $LOG_FILE
+chown syslog.adm $LOG_FILE
+
 #rm -rf $PID_FILE
 /bin/dns_manager &
 }

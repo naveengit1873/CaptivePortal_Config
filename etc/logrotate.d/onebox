@@ -1,0 +1,14 @@
+/var/www/html/onebox/log/production.log {
+       su root
+       daily
+       rotate 7
+       copytruncate
+       create 664 jboss jboss
+       delaycompress
+       compress
+       notifempty
+       missingok
+       postrotate
+                invoke-rc.d rsyslog rotate > /dev/null
+       endscript
+}

@@ -1,0 +1,55 @@
+# CaptivePortal_Config
+
+
+
+Introduction:
+
+This CaptivePortal config build provides centralized configuration file of all Captiveportal services. Also it contains the scripts to manage Captiveportal services. This script will auto update the Captiveportal services individual configuration files by fetching configuration from centralized config file.
+
+
+
+Deployment:
+
+To deploy/install Captiveportal config, run the following command.
+	
+	-> tar -C / -xvzf CP-Config_Update-vx.x.x.x.tar.gz
+
+Once it deployed, update the centralized config file "/etc/captiveportal.conf" as per your deployment
+
+
+Instructions:
+
+
+
+
+Commands:
+
+
+To check the Captiveportal services status
+
+	-> /root/scripts/captiveportald status
+
+To start all the Captiveportal services
+
+	-> /root/scripts/captiveportald start
+
+To restart all the Captiveporal services
+
+	-> /root/scripts/captiveportald restart
+
+To start any Captiveportal service
+
+	-> /root/scripts/captiveportald start <SERVICE_NAME>
+
+Note: Possible values for SERVICE_NAME are web_server, splash_server, dns_server, app_server, aaa_server, soap_radius, db_server, rabbitmq_server, load_balancer, keepalived
+
+To stop any Captiveportal serivice
+
+	-> /root/scripts/captiveportald stop <SERVICE_NAME>
+
+
+Versioning
+For the versions available, see the tags on this repository.
+
+Authors
+Naveen Reddy 

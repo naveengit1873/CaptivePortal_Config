@@ -178,7 +178,7 @@ start_splash_server() {
         fi
 
         echo -e "Starting ${APP_NAME}..."
-        /etc/cp-templates/scripts/web_conf_update.sh
+        /etc/cp-templates/scripts/splash_conf_update.sh
         /root/scripts/splashserverd start > /dev/null 2>&1
         ln -sf /etc/cp-templates/monit/conf.d/09-${APP_NAME} /etc/monit/conf.d/.
 	sleep 3
@@ -235,7 +235,7 @@ start_soap_radius() {
         fi    
 
         echo -e "Starting $APP_NAME"
-        /etc/cp-templates/scripts/aaa_conf_update.sh
+        /etc/cp-templates/scripts/soap_conf_update.sh
 	remove_pid_file ${APP_NAME}
         /root/scripts/soapradiusd start > /dev/null 2>&1
         if [ $? -eq 1 ]; then
@@ -454,9 +454,9 @@ start_load_balancer() {
         fi
       fi
       echo -e "Starting ${APP_NAME}..."
-      #/etc/cp-templates/scripts/rabbitmq_conf_update.sh
+      #/etc/cp-templates/scripts/loadbalancer_conf_update.sh
       /etc/init.d/nginx start
-      #ln -sf /etc/cp-templates/monit/conf.d/02-${APP_NAME} /etc/monit/conf.d/.
+      ln -sf /etc/cp-templates/monit/conf.d/02-${APP_NAME} /etc/monit/conf.d/.
       sleep 3
       echo "$APP_NAME started with pid $(get_pid ${APP_NAME})"
     else
@@ -482,7 +482,7 @@ start_keepalived() {
       echo -e "Starting ${APP_NAME}..."
       #/etc/cp-templates/scripts/keepalived_conf_update.sh
       /bin/systemctl start keepalived
-      #ln -sf /etc/cp-templates/monit/conf.d/01-${APP_NAME} /etc/monit/conf.d/.
+      ln -sf /etc/cp-templates/monit/conf.d/01-${APP_NAME} /etc/monit/conf.d/.
       sleep 3
       echo "$APP_NAME started with pid $(get_pid ${APP_NAME})"
     else

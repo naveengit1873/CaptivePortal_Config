@@ -37,7 +37,6 @@ elif [[ ${RUN_WEB_SERVER} -eq 1 && ${RUN_APP_SERVER} -eq 1 ]]; then
 	render_template /etc/cp-templates/web/envvars.tmpl > /etc/apache2/envvars
 	render_template /etc/cp-templates/web/apache2.conf.tmpl > /etc/apache2/apache2.conf
 	render_template /etc/cp-templates/web/standalone-ports.conf.tmpl > /etc/apache2/ports.conf
-	render_template /etc/cp-templates/web/splash_page_server.conf.tmpl > /etc/splash_page_server.conf
 	#render_template /etc/cp-templates/web/security.conf.tmpl > /etc/apache2/conf-enabled/security.conf
 	render_template /etc/cp-templates/web/standalone-000-default.conf.tmpl > /etc/apache2/sites-enabled/000-default.conf
 	render_template /etc/cp-templates/web/standalone-default-ssl.conf.tmpl > /etc/apache2/sites-enabled/default-ssl.conf

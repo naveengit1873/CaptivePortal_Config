@@ -150,6 +150,10 @@
         	# Passes w r t ROR
 	    	ProxyPass /onebox/ http://127.0.0.1:8082/onebox/
 
+	        # Passes w r t Presence
+        	#ProxyPass /presence/ http://localhost:3000/presence/
+	        #ProxyPass /users/ http://127.0.0.1:8082/users/
+
 	    	RewriteEngine On
 		RewriteRule \"^/OneBox\\$\" \"/OneBox/\" [R]
 	        RewriteRule \"^/ws\/\$\" \"/ws/login.html\" [R]

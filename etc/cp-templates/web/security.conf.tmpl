@@ -30,7 +30,7 @@ ServerTokens Prod
 # name to server-generated pages (internal error documents, FTP directory
 # listings, mod_status and mod_info output etc., but not CGI generated
 # documents or custom error documents).
-# Set to "EMail" to also include a mailto: link to the ServerAdmin.
+# Set to \"EMail\" to also include a mailto: link to the ServerAdmin.
 # Set to one of:  On | Off | EMail
 #ServerSignature Off
 ServerSignature Off
@@ -38,7 +38,7 @@ ServerSignature Off
 #
 # Allow TRACE method
 #
-# Set to "extended" to also reflect the request body (only for testing and
+# Set to \"extended\" to also reflect the request body (only for testing and
 # diagnostic purposes).
 #
 # Set to one of:  On | Off | extended
@@ -51,7 +51,7 @@ TraceEnable Off
 # If you use version control systems in your document root, you should
 # probably deny access to their directories. For example, for subversion:
 #
-#<DirectoryMatch "/\.svn">
+#<DirectoryMatch \"/\.svn\">
 #   Require all denied
 #</DirectoryMatch>
 
@@ -60,20 +60,20 @@ TraceEnable Off
 # else than declared by the content type in the HTTP headers.
 # Requires mod_headers to be enabled.
 #
-Header set X-Content-Type-Options: "nosniff"
+Header set X-Content-Type-Options: \"nosniff\"
 
-Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Origin \"*\"
 
-Header set X-XSS-Protection "1; mode=block"
+Header set X-XSS-Protection \"1; mode=block\"
 
-Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+Header set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"
 
 #
 # Setting this header will prevent other sites from embedding pages from this
 # site as frames. This defends against clickjacking attacks.
 # Requires mod_headers to be enabled.
 #
-Header set X-Frame-Options: "sameorigin"
+Header set X-Frame-Options: \"sameorigin\"
 
 
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
